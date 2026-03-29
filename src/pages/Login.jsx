@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { TransactionContext } from '../context/TransactionContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, Lock, User, Loader2 } from 'lucide-react';
+import { Wallet, LogIn, Lock, User, Loader2 } from 'lucide-react';
 
 const Login = () => {
     const [username, setUsername] = useState('');
