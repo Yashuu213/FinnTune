@@ -146,6 +146,7 @@ const Lending = () => {
     const { debts, addDebt, deleteDebt, getPeopleBalances, vpa, updateVpa } = useContext(TransactionContext);
     const [name, setName] = useState('');
     const [amount, setAmount] = useState('');
+    const [description, setDescription] = useState('');
     const [type, setType] = useState('lent');
     const [isNewPerson, setIsNewPerson] = useState(false);
     const [expandedPerson, setExpandedPerson] = useState(null);
@@ -164,10 +165,13 @@ const Lending = () => {
             name,
             amount: parseFloat(amount),
             type,
+            description,
+            date: new Date().toISOString(),
         });
 
         setName('');
         setAmount('');
+        setDescription('');
         setIsNewPerson(false);
     };
 
@@ -338,6 +342,17 @@ const Lending = () => {
                             </div>
                         </div>
 
+                        <div className="space-y-2">
+                            <label className="text-sm font-bold text-gray-700 ml-1 uppercase tracking-tight">Reason / Note (Optional)</label>
+                            <input
+                                type="text"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                placeholder="What is this for? (e.g. Dinner, Rent)"
+                                className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
+                            />
+                        </div>
+
                         <button
                             type="submit"
                             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98] flex items-center justify-center gap-3 group"
@@ -433,7 +448,15 @@ const Lending = () => {
                                                             </div>
                                                             <div>
                                                                 <p className="font-bold text-gray-900">{txn.type === 'lent' ? 'You paid' : 'They paid'}</p>
-                                                                <p className="text-xs font-bold text-gray-400 uppercase">{new Date(txn.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className="text-xs font-bold text-gray-400 uppercase">{new Date(txn.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                                                                    {txn.description && (
+                                                                        <>
+                                                                            <span className="text-gray-300">•</span>
+                                                                            <p className="text-xs font-bold text-blue-500">{txn.description}</p>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
