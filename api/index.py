@@ -18,8 +18,13 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-t
 # Vercel Postgres automatically uses POSTGRES_URL, or DATABASE_URL
 database_url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
 
-    # Use a persistent local path in the project directory for local development
-    db_path = os.path.join(basedir, 'upi.db') 
+if not database_url:
+    if os.environ.get('VERCEL'):
+        # Vercel filesystem is read-only at runtime except for /tmp
+        db_path = os.path.join('/tmp', 'upi.db')
+    else:
+        # Use a persistent local path in the project directory for local development
+        db_path = os.path.join(basedir, 'upi.db') 
     database_url = f'sqlite:///{db_path}'
 
 if database_url.startswith("postgres://"):
