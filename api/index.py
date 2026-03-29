@@ -83,27 +83,29 @@ def reset_db():
 
 @app.route('/api/register', methods=['POST'])
 def register():
-    # Ensure tables exist (quick fix for serverless sqlite ephemeral nature)
-    # real production apps should use migration scripts
-    if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
-        db.create_all()
+    try:
+        if 'sqlite' in app.config['SQLALCHEMY_DATABASE_URI']:
+            db.create_all()
+            
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
         
-    data = request.json
-    username = data.get('username')
-    password = data.get('password')
-    
-    if not username or not password:
-        return jsonify({'error': 'Username and password required'}), 400
-    
-    if User.query.filter_by(username=username).first():
-        return jsonify({'error': 'Username already exists'}), 400
-    
-    hashed_password = generate_password_hash(password)
-    new_user = User(username=username, password_hash=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
-    
-    return jsonify({'message': 'User registered successfully'}), 201
+        if not username or not password:
+            return jsonify({'error': 'Username and password required'}), 400
+        
+        if User.query.filter_by(username=username).first():
+            return jsonify({'error': 'Username already exists'}), 400
+        
+        hashed_password = generate_password_hash(password)
+        new_user = User(username=username, password_hash=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        return jsonify({'message': 'User registered successfully'}), 201
+    except Exception as e:
+        print(f"Error during registration: {str(e)}")
+        return jsonify({'error': f"Internal Server Error: {str(e)}"}), 500
 
 @app.route('/api/login', methods=['POST'])
 def login():
