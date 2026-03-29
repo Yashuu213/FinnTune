@@ -49,11 +49,11 @@ export const TransactionProvider = ({ children }) => {
             const data = await res.json();
             if (res.ok) {
                 setUser({ username: data.username });
-                return true;
+                return { success: true };
             }
-            return false;
+            return { success: false, error: data.error || 'Login failed' };
         } catch (err) {
-            return false;
+            return { success: false, error: 'Connection error' };
         }
     };
 
@@ -68,9 +68,9 @@ export const TransactionProvider = ({ children }) => {
             if (res.ok) {
                 return { success: true };
             }
-            return { success: false, error: data.error };
+            return { success: false, error: data.error || 'Registration failed' };
         } catch (err) {
-            return { success: false, error: 'Registration failed' };
+            return { success: false, error: 'Connection error' };
         }
     };
 
