@@ -69,7 +69,7 @@ const Dashboard = () => {
                     <h3 className="text-slate-400 dark:text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Net Liquidity</h3>
                     <div className="space-y-1">
                         <p className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono">₹{balance.toLocaleString('en-IN')}</p>
-                        <p className="text-[10px] text-indigo-600 dark:text-slate-400 font-bold tracking-widest uppercase mt-2">Available Assets</p>
+                        <p className="text-[10px] text-indigo-600 dark:text-slate-300 font-bold tracking-widest uppercase mt-2">Available Assets</p>
                     </div>
                     
                     <div className="mt-10 grid grid-cols-2 gap-4 border-t border-slate-50 dark:border-slate-800 pt-6">
@@ -86,8 +86,8 @@ const Dashboard = () => {
 
                 {/* Legend or Quick Tips (Replaces the large insights cards for a cleaner look) */}
                 <div className="pro-card p-6 bg-slate-50 dark:bg-slate-900/50 border-dashed border-slate-200 dark:border-slate-800">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Pro Tips</h4>
-                    <ul className="space-y-3 text-[11px] text-slate-500 font-medium">
+                    <h4 className="text-[10px] font-bold text-slate-400 dark:text-indigo-400/70 uppercase tracking-widest mb-4">Pro Tips</h4>
+                    <ul className="space-y-3 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         <li className="flex items-start gap-2">
                             <span className="w-1 h-1 rounded-full bg-indigo-500 mt-1.5 flex-shrink-0" />
                             <span>Type "500 rent" to log expenses quickly.</span>
