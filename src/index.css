@@ -2,10 +2,93 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+@layer base {
+  :root {
+    --bg-app: #f8fafc;
+    --surface: #ffffff;
+    --surface-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent: #4f46e5;
+    --accent-light: #818cf8;
+    --success: #059669;
+    --danger: #dc2626;
+    --ring: rgba(79, 70, 229, 0.1);
+  }
+
+  .dark {
+    --bg-app: #020617;
+    --surface: #0f172a;
+    --surface-hover: #1e293b;
+    --border: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --accent: #6366f1;
+    --accent-light: #a5b4fc;
+    --success: #10b981;
+    --danger: #ef4444;
+    --ring: rgba(99, 102, 241, 0.2);
+  }
+
+  body {
+    @apply transition-colors duration-300;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
 }
 
-body {
-  @apply bg-gray-50 text-gray-900;
+@layer components {
+  .pro-card {
+    @apply bg-[var(--surface)] border border-[var(--border)] rounded-2xl transition-all duration-200 overflow-hidden;
+  }
+
+  .pro-card-hover {
+    @apply hover:border-[var(--accent)] hover:shadow-xl hover:shadow-indigo-500/5;
+  }
+
+  .pro-input {
+    @apply w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 outline-none transition-all duration-200;
+    @apply focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--ring)];
+  }
+
+  .pro-button {
+    @apply px-5 py-2.5 rounded-xl font-medium transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .btn-primary {
+    @apply pro-button bg-[var(--accent)] text-white shadow-lg shadow-indigo-500/20 hover:brightness-110;
+  }
+
+  .btn-secondary {
+    @apply pro-button bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--surface-hover)];
+  }
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-[var(--text-secondary)];
+    @apply hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)];
+  }
+
+  .nav-item.active {
+    @apply bg-[var(--accent)] text-white shadow-md shadow-indigo-500/20;
+  }
+}
+
+/* Precision Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full;
 }

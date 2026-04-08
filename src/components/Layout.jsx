@@ -1,85 +1,104 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { TransactionContext } from '../context/TransactionContext';
-import { LayoutDashboard, PieChart, Wallet, LogOut } from 'lucide-react';
+import { LayoutDashboard, PieChart, Wallet, LogOut, Sun, Moon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Layout = ({ children }) => {
     const location = useLocation();
-    const { logout, user } = useContext(TransactionContext);
+    const { logout, user, theme, toggleTheme } = useContext(TransactionContext);
 
     const isActive = (path) => location.pathname === path;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
-            <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-[100] border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="bg-blue-600 p-2 rounded-lg">
-                            <Wallet className="w-6 h-6 text-white" />
-                        </div>
-                        <h1 className="text-xl font-bold text-gray-900">MoneyTracker</h1>
+        <div className="min-h-screen bg-[var(--bg-app)] selection:bg-indigo-100 selection:text-indigo-900">
+            {/* Minimal Header */}
+            <header className="sticky top-0 z-[100] bg-[var(--surface)] border-b border-[var(--border)] shadow-sm backdrop-blur-md bg-opacity-80">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-8">
+                        <Link to="/" className="flex items-center gap-2 group">
+                            <div className="bg-indigo-600 p-1.5 rounded-lg shadow-sm group-hover:bg-indigo-500 transition-colors">
+                                <Wallet className="w-5 h-5 text-white" />
+                            </div>
+                            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                                Finn<span className="text-indigo-600">Tune</span>
+                            </span>
+                        </Link>
+
+                        {/* Desktop Navigation */}
+                        <nav className="hidden md:flex items-center gap-1">
+                            {[
+                                { path: '/', label: 'Overview', icon: LayoutDashboard },
+                                { path: '/analysis', label: 'Treasury', icon: PieChart },
+                                { path: '/lending', label: 'Ledger', icon: Wallet },
+                            ].map((item) => (
+                                <Link 
+                                    key={item.path}
+                                    to={item.path} 
+                                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                                        isActive(item.path) 
+                                        ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' 
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                    }`}
+                                >
+                                    <item.icon size={16} strokeWidth={isActive(item.path) ? 2.5 : 2} />
+                                    {item.label}
+                                </Link>
+                            ))}
+                        </nav>
                     </div>
 
-                    {/* Desktop Navigation */}
-                    <nav className="hidden sm:flex items-center gap-6">
-                        <Link to="/" className={`text-sm font-medium hover:text-blue-600 transition-colors ${isActive('/') ? 'text-blue-600' : 'text-gray-600'}`}>
-                            Dashboard
-                        </Link>
-                        <Link to="/analysis" className={`text-sm font-medium hover:text-blue-600 transition-colors ${isActive('/analysis') ? 'text-blue-600' : 'text-gray-600'}`}>
-                            Analysis
-                        </Link>
-                        <Link to="/lending" className={`text-sm font-medium hover:text-blue-600 transition-colors ${isActive('/lending') ? 'text-blue-600' : 'text-gray-600'}`}>
-                            Lending
-                        </Link>
-                    </nav>
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-gray-600 hidden sm:block">
-                            Hello, <strong>{user?.username}</strong>
-                        </span>
+                    <div className="flex items-center gap-3">
                         <button
-                            onClick={logout}
-                            className="p-2 text-gray-500 hover:text-red-600 transition-colors"
-                            title="Logout"
+                            onClick={toggleTheme}
+                            className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            aria-label="Toggle Theme"
                         >
-                            <LogOut className="w-5 h-5" />
+                            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
                         </button>
+                        
+                        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
+                        <div className="flex items-center gap-2 pl-1">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xs uppercase">
+                                {user?.username?.substring(0, 2)}
+                            </div>
+                            <button
+                                onClick={logout}
+                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                title="Exit Session"
+                            >
+                                <LogOut className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 w-full mb-20 sm:mb-0">
+            {/* Main Content Area */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full min-h-[calc(100vh-4rem)] pb-24 md:pb-8">
                 {children}
             </main>
 
-            {/* Mobile Bottom Navigation */}
-            <nav className="bg-white border-t border-gray-200 fixed bottom-0 w-full pb-safe sm:hidden">
+            {/* Mobile Navigation Bar */}
+            <nav className="fixed bottom-0 left-0 right-0 bg-[var(--surface)] border-t border-[var(--border)] md:hidden z-[100] pb-safe">
                 <div className="flex justify-around items-center h-16">
-                    <Link
-                        to="/"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
+                    {[
+                        { path: '/', label: 'Home', icon: LayoutDashboard },
+                        { path: '/analysis', label: 'Analysis', icon: PieChart },
+                        { path: '/lending', label: 'Ledger', icon: Wallet },
+                    ].map((item) => (
+                        <Link
+                            key={item.path}
+                            to={item.path}
+                            className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+                                isActive(item.path) ? 'text-indigo-600' : 'text-slate-400'
                             }`}
-                    >
-                        <LayoutDashboard className="w-6 h-6" />
-                        <span className="text-xs font-medium">Dashboard</span>
-                    </Link>
-                    <Link
-                        to="/analysis"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/analysis') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                    >
-                        <PieChart className="w-6 h-6" />
-                        <span className="text-xs font-medium">Analysis</span>
-                    </Link>
-                    <Link
-                        to="/lending"
-                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${isActive('/lending') ? 'text-blue-600' : 'text-gray-500 hover:text-gray-900'
-                            }`}
-                    >
-                        <Wallet className="w-6 h-6" />
-                        <span className="text-xs font-medium">Lending</span>
-                    </Link>
+                        >
+                            <item.icon className={`w-5 h-5 mb-1 ${isActive(item.path) ? 'stroke-[2.5px]' : ''}`} />
+                            <span className="text-[10px] font-medium tracking-wide uppercase">{item.label}</span>
+                        </Link>
+                    ))}
                 </div>
             </nav>
         </div>

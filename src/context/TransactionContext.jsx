@@ -8,6 +8,17 @@ export const TransactionProvider = ({ children }) => {
     const [debts, setDebts] = useState([]);
     const [vpa, setVpa] = useState(localStorage.getItem('userVpa') || '');
     const [loading, setLoading] = useState(true);
+    const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+
+    // Update theme class on body
+    useEffect(() => {
+        if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        localStorage.setItem('theme', theme);
+    }, [theme]);
 
     // Check auth status on load
     useEffect(() => {
@@ -155,6 +166,28 @@ export const TransactionProvider = ({ children }) => {
         }
     };
 
+    const addBulkItems = async (items) => {
+        for (const item of items) {
+            if (item.is_debt) {
+                await addDebt({
+                    amount: item.amount,
+                    name: item.name,
+                    type: item.type,
+                    description: item.description,
+                    date: new Date().toISOString()
+                });
+            } else {
+                await addTransaction({
+                    amount: item.amount,
+                    description: item.description,
+                    type: item.type,
+                    category: item.category,
+                    date: new Date().toISOString()
+                });
+            }
+        }
+    };
+
     // Calculate net balance per person
     const getPersonBalance = (personName) => {
         return debts
@@ -192,7 +225,10 @@ export const TransactionProvider = ({ children }) => {
             debts,
             addDebt,
             deleteDebt,
+            addBulkItems,
             vpa,
+            theme,
+            toggleTheme: () => setTheme(prev => prev === 'light' ? 'dark' : 'light'),
             updateVpa: (newVpa) => {
                 setVpa(newVpa);
                 localStorage.setItem('userVpa', newVpa);

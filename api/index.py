@@ -219,6 +219,111 @@ def delete_debt(id):
     return jsonify({'message': 'Debt deleted'})
 
 
+# --- AI "Bro-Bot" Parser ---
+import re
+
+@app.route('/api/ai_parse', methods=['POST'])
+@login_required
+def ai_parse():
+    data = request.json
+    text = data.get('text', '').lower()
+    
+    # Split text by common delimiters: "and", "aur", ",", "ke", "liye"
+    # But preserve context for segments
+    segments = re.split(r'\s+(?:and|aur|ke|liye|aur|plus|,)\s+|\s*,\s*', text)
+    if len(segments) == 1 and segments[0] == text:
+        # If no explicit delimiters, try to split by "number followed by words"
+        segments = re.findall(r'\d+\s+[^\d]+', text)
+        if not segments:
+            segments = [text]
+
+    results = []
+    
+    # Advanced keywords
+    CATEGORIES = {
+        'food': ['pizza', 'khana', 'dinner', 'lunch', 'chai', 'coffee', 'maggi', 'snack', 'restaurant', 'mcd', 'kfc'],
+        'transport': ['auto', 'cab', 'uber', 'ola', 'petrol', 'diesel', 'bus', 'train', 'metro'],
+        'shopping': ['amazon', 'flipkart', 'myntra', 'kapde', 'clothes', 'shoes'],
+        'bills': ['recharge', 'wifi', 'rent', 'bijli', 'electricity', 'water'],
+    }
+    INCOME_KEYWORDS = ['salary', 'income', 'profit', 'mile', 'mila', 'aaye', 'aai', 'credited', 'deposit', 'bonus']
+    DEBT_KEYWORDS = ['ko', 'diya', 'lent', 'se liya', 'borrowed', 'se']
+    
+    for seg in segments:
+        seg = seg.strip()
+        if not seg: continue
+            
+        amt_match = re.search(r'(\d+)', seg)
+        if not amt_match: continue
+        amount = float(amt_match.group(1))
+        
+        is_debt = False
+        is_income = False
+        person_name = None
+        debt_type = None
+        
+        # 1. Check for specific income patterns (like salary, profit)
+        if any(kw in seg for kw in INCOME_KEYWORDS):
+            is_income = True
+
+        # 2. Check for Debt/Person patterns
+        # "X ko diya" vs "X ne diya"
+        # "ne diya" or "ne diye" means Income/Gift (Money coming in)
+        if 'ne diya' in seg or 'ne diye' in seg or 'mujhe' in seg:
+            is_income = True
+        
+        # "ko diya" or "ko diye" or "lent" means Debt (Money going out)
+        elif any(kw in seg for kw in DEBT_KEYWORDS):
+            is_debt = True
+            names_match = re.search(r'(?:to|ko|se|for)\s+([a-zA-Z]+)|([a-zA-Z]+)\s+(?:ko|se|ko diya|se liya)', seg)
+            
+            words = seg.replace(str(int(amount)), '').split()
+            potential_names = [w for w in words if w not in ['ko', 'diya', 'se', 'liya', 'aur', 'ke', 'liye', 'expense', 'add', 'lent', 'borrowed']]
+            if potential_names:
+                person_name = potential_names[0].capitalize()
+            
+            if 'ko' in seg or 'diya' in seg or 'lent' in seg:
+                debt_type = 'lent'
+            else:
+                debt_type = 'borrowed'
+
+        # 3. Decision Tree
+        if is_debt and person_name:
+            results.append({
+                'is_debt': True,
+                'amount': amount,
+                'name': person_name,
+                'type': debt_type,
+                'description': f"Bro-Bot Split: {seg}"
+            })
+        elif is_income:
+            results.append({
+                'is_debt': False,
+                'amount': amount,
+                'type': 'income',
+                'category': 'Salary/Income' if 'salary' in seg else 'General',
+                'description': seg or 'Income'
+            })
+        else:
+            # Default to expense
+            description = seg.replace(str(int(amount)), '').strip()
+            category = 'Other'
+            for cat, keywords in CATEGORIES.items():
+                if any(kw in description for kw in keywords):
+                    category = cat.capitalize()
+                    break
+            
+            results.append({
+                'is_debt': False,
+                'amount': amount,
+                'type': 'expense',
+                'category': category,
+                'description': description or 'Expense'
+            })
+
+    return jsonify(results)
+
+
 # --- Serve Frontend (Fallback for Local Dev) ---
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
@@ -231,3 +336,5 @@ def serve(path):
         return send_from_directory(app.static_folder, 'index.html')
 
 # No app.run() needed for Vercel
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)
