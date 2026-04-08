@@ -81,7 +81,7 @@ Want to see the magic under the hood?
 
 ### 1. Clone & Setup
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Yashuu213/FinnTune
 cd upi
 ```
 
