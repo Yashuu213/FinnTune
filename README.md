@@ -10,7 +10,7 @@
   </p>
 
   <p>
-    <a href="#-download-the-android-app-apk"><strong>📲 DOWNLOAD THE APK HERE</strong></a>
+    <a href="https://github.com/Yashuu213/FinnTune/releases/latest"><strong>📲 DOWNLOAD THE APK HERE</strong></a>
   </p>
 
 </div>
@@ -29,7 +29,7 @@ Built with the modern user in mind, FinnTune allows you to log transactions, spl
 
 Experience the true power of FinnTune as a native mobile application. With lightning-fast performance and seamless voice integration, the Android app is the ultimate way to manage your money on the go.
 
-**👉 [Download the Latest Release (FinnTune v1.0.0 APK)](#)** *(Replace this `#` with your GitHub Release Link)*
+**👉 [Download the Latest Release (FinnTune v1.0.0 APK)](https://github.com/Yashuu213/FinnTune/releases/latest)**
 
 > **Installation Note**: You may need to bypass Google Play Protect since this is an indie developer release. Just click "More Details" -> "Install Anyway".
 
