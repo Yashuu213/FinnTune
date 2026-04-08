@@ -166,6 +166,17 @@ export const TransactionProvider = ({ children }) => {
         }
     };
 
+    const clearPersonDebts = async (name) => {
+        try {
+            const res = await fetch(`/api/debts/clear/${encodeURIComponent(name)}`, { method: 'DELETE' });
+            if (res.ok) {
+                setDebts(prev => prev.filter(d => d.name.toLowerCase() !== name.toLowerCase()));
+            }
+        } catch (err) {
+            console.error("Failed to clear person debts", err);
+        }
+    };
+
     const addBulkItems = async (items) => {
         for (const item of items) {
             if (item.is_debt) {
@@ -234,7 +245,8 @@ export const TransactionProvider = ({ children }) => {
                 localStorage.setItem('userVpa', newVpa);
             },
             getPersonBalance,
-            getPeopleBalances
+            getPeopleBalances,
+            clearPersonDebts
         }}>
             {children}
         </TransactionContext.Provider>

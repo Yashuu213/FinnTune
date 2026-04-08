@@ -4,17 +4,18 @@
 
 @layer base {
   :root {
-    --bg-app: #f8fafc;
+    --bg-app: #f8fafc; /* Professional clean background */
     --surface: #ffffff;
     --surface-hover: #f1f5f9;
-    --border: #e2e8f0;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
+    --border: #f1f5f9; /* Ultra-thin borders */
+    --text-primary: #0f172a; /* Solid Slate for clarity */
+    --text-secondary: #64748b; 
     --accent: #4f46e5;
     --accent-light: #818cf8;
-    --success: #059669;
-    --danger: #dc2626;
+    --success: #10b981;
+    --danger: #ef4444;
     --ring: rgba(79, 70, 229, 0.1);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); /* Sharp structural shadow */
   }
 
   .dark {

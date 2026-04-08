@@ -33,22 +33,22 @@ const TransactionList = () => {
                                         {transaction.type === 'income' ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate capitalize">{transaction.description}</p>
+                                        <p className="text-sm font-bold truncate capitalize" style={{ color: 'var(--text-primary)' }}>{transaction.description}</p>
                                         <div className="flex items-center gap-2 mt-0.5 md:hidden">
                                             <span className="text-[9px] font-bold text-indigo-500 uppercase tracking-tighter">{transaction.category}</span>
-                                            <span className="text-[9px] text-slate-400">/ {new Date(transaction.date).toLocaleDateString('en-GB')}</span>
+                                            <span className="text-[9px] text-slate-500 dark:text-slate-400">/ {new Date(transaction.date).toLocaleDateString('en-GB')}</span>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div className="hidden md:block col-span-2 text-center">
-                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[9px] font-bold text-slate-500 uppercase tracking-tighter">
+                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-[9px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">
                                         {transaction.category}
                                     </span>
                                 </div>
 
                                 <div className="hidden md:block col-span-2 text-right">
-                                    <p className="text-xs font-medium text-slate-400 font-mono">
+                                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 font-mono">
                                         {new Date(transaction.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })}
                                     </p>
                                 </div>

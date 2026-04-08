@@ -59,13 +59,15 @@ const Layout = ({ children }) => {
                         
                         <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 
-                        <div className="flex items-center gap-2 pl-1">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-700 dark:text-indigo-300 font-bold text-xs uppercase">
-                                {user?.username?.substring(0, 2)}
+                        <div className="flex items-center gap-3 pr-1">
+                            <div className="flex flex-col items-end items-center mr-1">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-900 dark:text-white font-black text-[10px] shadow-sm">
+                                    {user?.username?.substring(0, 2).toUpperCase()}
+                                </div>
                             </div>
                             <button
                                 onClick={logout}
-                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all border border-transparent hover:border-red-100 dark:hover:border-red-900/40"
                                 title="Exit Session"
                             >
                                 <LogOut className="w-4 h-4" />

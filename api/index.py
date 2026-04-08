@@ -218,6 +218,27 @@ def delete_debt(id):
     db.session.commit()
     return jsonify({'message': 'Debt deleted'})
 
+@app.route('/api/debts/clear/<name>', methods=['DELETE'])
+@login_required
+def clear_person_debts(name):
+    try:
+        # Delete all debts where name matches (case-insensitive-ish depending on DB) and user_id matches
+        # Using a like or direct match based on how they were saved
+        debts_to_delete = Debt.query.filter(
+            Debt.user_id == current_user.id,
+            Debt.name.ilike(name)
+        ).all()
+        
+        count = len(debts_to_delete)
+        for d in debts_to_delete:
+            db.session.delete(d)
+        
+        db.session.commit()
+        return jsonify({'message': f'Cleared {count} debt entries for {name}'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 
 # --- AI "Bro-Bot" Parser ---
 import re

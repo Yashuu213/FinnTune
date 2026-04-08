@@ -50,11 +50,11 @@ const Dashboard = () => {
                 </div>
 
                 {/* Transaction List */}
-                <div className="pro-card p-6">
+                <div className="pro-card p-6 shadow-sm border-slate-100">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-500">Transaction Registry</h2>
+                        <h2 className="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-slate-400">Transaction Registry</h2>
                         <div className="flex gap-2">
-                             <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500">LATEST</span>
+                             <span className="px-2 py-1 rounded-md bg-indigo-50 dark:bg-slate-800 text-[10px] font-bold text-indigo-600 dark:text-slate-400">LATEST</span>
                         </div>
                     </div>
                     <TransactionList />
@@ -63,23 +63,23 @@ const Dashboard = () => {
 
             {/* Right Section: Intelligence & Stats */}
             <div className="lg:col-span-4 space-y-6">
-                {/* Master Balance Card */}
-                <div className="pro-card bg-slate-900 border-slate-800 p-8 text-white relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
-                    <h3 className="text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Net Liquidity</h3>
+                {/* Master Balance Card - Crisp Banking Style */}
+                <div className="pro-card bg-white dark:bg-slate-900 border-indigo-100 dark:border-slate-800 p-8 relative overflow-hidden shadow-sm border-l-4 border-l-indigo-600">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 dark:bg-indigo-500/10 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
+                    <h3 className="text-slate-400 dark:text-indigo-400 font-bold uppercase tracking-[0.2em] text-[10px] mb-8">Net Liquidity</h3>
                     <div className="space-y-1">
-                        <p className="text-4xl font-bold tracking-tight">₹{balance.toLocaleString('en-IN')}</p>
-                        <p className="text-xs text-slate-400 font-medium tracking-wide">AVAILABLE FUNDS</p>
+                        <p className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-mono">₹{balance.toLocaleString('en-IN')}</p>
+                        <p className="text-[10px] text-indigo-600 dark:text-slate-400 font-bold tracking-widest uppercase mt-2">Available Assets</p>
                     </div>
                     
-                    <div className="mt-10 grid grid-cols-2 gap-4 border-t border-slate-800 pt-6">
+                    <div className="mt-10 grid grid-cols-2 gap-4 border-t border-slate-50 dark:border-slate-800 pt-6">
                         <div>
-                            <span className="text-[10px] font-bold text-slate-500 block uppercase mb-1">Incoming</span>
-                            <span className="text-emerald-400 font-bold">₹{income.toLocaleString('en-IN')}</span>
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase mb-1 tracking-tighter">Incoming</span>
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">₹{income.toLocaleString('en-IN')}</span>
                         </div>
                         <div>
-                            <span className="text-[10px] font-bold text-slate-500 block uppercase mb-1">Outgoing</span>
-                            <span className="text-rose-400 font-bold">₹{expense.toLocaleString('en-IN')}</span>
+                            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 block uppercase mb-1 tracking-tighter">Outgoing</span>
+                            <span className="text-rose-600 dark:text-rose-400 font-bold text-sm">₹{expense.toLocaleString('en-IN')}</span>
                         </div>
                     </div>
                 </div>
