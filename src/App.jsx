@@ -5,6 +5,7 @@ import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Analysis from './pages/Analysis';
 import Lending from './pages/Lending';
+import BotTraining from './pages/BotTraining';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -45,6 +46,12 @@ function App() {
           <Route path="/lending" element={
             <ProtectedRoute>
               <Lending />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/bot-training" element={
+            <ProtectedRoute>
+              <BotTraining />
             </ProtectedRoute>
           } />
         </Routes>

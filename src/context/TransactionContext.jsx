@@ -180,6 +180,7 @@ export const TransactionProvider = ({ children }) => {
     const addBulkItems = async (items) => {
         for (const item of items) {
             if (item.is_debt) {
+                // 1. Add to Ledger
                 await addDebt({
                     amount: item.amount,
                     name: item.name,
@@ -187,12 +188,23 @@ export const TransactionProvider = ({ children }) => {
                     description: item.description,
                     date: new Date().toISOString()
                 });
+
+                // 2. Add to Dashboard (Sync)
+                // If I LENT, it's an Expense. If I BORROWED/RECEIVED, it's Income.
+                const syncType = item.type === 'lent' ? 'expense' : 'income';
+                await addTransaction({
+                    amount: item.amount,
+                    description: `${item.type === 'lent' ? 'Lent to' : 'Received from'} ${item.name}`,
+                    type: syncType,
+                    category: 'Ledger-Linked',
+                    date: new Date().toISOString()
+                });
             } else {
                 await addTransaction({
                     amount: item.amount,
                     description: item.description,
                     type: item.type,
-                    category: item.category,
+                    category: item.category || 'General',
                     date: new Date().toISOString()
                 });
             }

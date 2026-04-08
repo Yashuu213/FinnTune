@@ -63,6 +63,13 @@ class Debt(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+class TrainingData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    keyword = db.Column(db.String(100), nullable=False)
+    target_type = db.Column(db.String(20), nullable=False) # 'income', 'expense', 'lent', 'borrowed'
+    target_category = db.Column(db.String(50))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -243,32 +250,83 @@ def clear_person_debts(name):
 # --- AI "Bro-Bot" Parser ---
 import re
 
+@app.route('/api/train', methods=['POST'])
+@login_required
+def train_bot():
+    data = request.json
+    keyword = data.get('keyword', '').lower().strip()
+    target_type = data.get('target_type')
+    target_category = data.get('target_category')
+    
+    if not keyword:
+        return jsonify({'error': 'Keyword required'}), 400
+        
+    # Check if exists, update or create
+    entry = TrainingData.query.filter_by(user_id=current_user.id, keyword=keyword).first()
+    if entry:
+        entry.target_type = target_type
+        entry.target_category = target_category
+    else:
+        entry = TrainingData(
+            keyword=keyword,
+            target_type=target_type,
+            target_category=target_category,
+            user_id=current_user.id
+        )
+        db.session.add(entry)
+    
+    db.session.commit()
+    return jsonify({'message': f'Bot learned: {keyword} -> {target_type}'})
+
+@app.route('/api/vocabulary', methods=['GET'])
+@login_required
+def get_vocabulary():
+    vocab = TrainingData.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{
+        'id': v.id,
+        'keyword': v.keyword,
+        'target_type': v.target_type,
+        'target_category': v.target_category
+    } for v in vocab])
+
+@app.route('/api/train/<int:id>', methods=['DELETE'])
+@login_required
+def delete_vocabulary(id):
+    entry = TrainingData.query.get_or_404(id)
+    if entry.user_id != current_user.id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    db.session.delete(entry)
+    db.session.commit()
+    return jsonify({'message': 'Rule deleted'})
+
 @app.route('/api/ai_parse', methods=['POST'])
 @login_required
 def ai_parse():
     data = request.json
     text = data.get('text', '').lower()
     
-    # Split text by common delimiters: "and", "aur", ",", "ke", "liye"
-    # But preserve context for segments
-    segments = re.split(r'\s+(?:and|aur|ke|liye|aur|plus|,)\s+|\s*,\s*', text)
+    # Load user's custom training data
+    custom_rules = TrainingData.query.filter_by(user_id=current_user.id).all()
+    rules_map = {r.keyword: (r.target_type, r.target_category) for r in custom_rules}
+    
+    # Smart segmentation: only split on explicit multi-transaction delimiters
+    # DO NOT split on 'ke', 'liye' etc. which are part of Hinglish sentence structure
+    segments = re.split(r'\s+(?:and|aur|plus)\s+|\s*,\s*', text)
     if len(segments) == 1 and segments[0] == text:
-        # If no explicit delimiters, try to split by "number followed by words"
-        segments = re.findall(r'\d+\s+[^\d]+', text)
-        if not segments:
-            segments = [text]
+        segments = [text]
 
     results = []
     
-    # Advanced keywords
+    # --- MASSIVE PRE-TRAINING VOCABULARY ---
     CATEGORIES = {
-        'food': ['pizza', 'khana', 'dinner', 'lunch', 'chai', 'coffee', 'maggi', 'snack', 'restaurant', 'mcd', 'kfc'],
-        'transport': ['auto', 'cab', 'uber', 'ola', 'petrol', 'diesel', 'bus', 'train', 'metro'],
-        'shopping': ['amazon', 'flipkart', 'myntra', 'kapde', 'clothes', 'shoes'],
-        'bills': ['recharge', 'wifi', 'rent', 'bijli', 'electricity', 'water'],
+        'Food': ['pizza', 'khana', 'dinner', 'lunch', 'chai', 'coffee', 'maggi', 'snack', 'restaurant', 'mcd', 'kfc', 'swiggy', 'zomato', 'momos', 'burger'],
+        'Transport': ['auto', 'cab', 'uber', 'ola', 'petrol', 'diesel', 'bus', 'train', 'metro', 'parking', 'toll'],
+        'Shopping': ['amazon', 'flipkart', 'myntra', 'kapde', 'clothes', 'shoes', 'mall', 'zara', 'h&m', 'groceries', 'sabzi'],
+        'Bills': ['recharge', 'wifi', 'rent', 'bijli', 'electricity', 'water', 'gas', 'insurance', 'ott', 'netflix'],
+        'Healthcare': ['medicine', 'doctor', 'hospital', 'clinic', 'pharma', 'dawai'],
+        'Fun': ['movie', 'club', 'party', 'game', 'gaming', 'drinks', 'beer', 'pub'],
     }
-    INCOME_KEYWORDS = ['salary', 'income', 'profit', 'mile', 'mila', 'aaye', 'aai', 'credited', 'deposit', 'bonus']
-    DEBT_KEYWORDS = ['ko', 'diya', 'lent', 'se liya', 'borrowed', 'se']
+    INCOME_KEYWORDS = ['salary', 'income', 'profit', 'mile', 'mila', 'aaye', 'aai', 'credited', 'deposit', 'bonus', 'received']
     
     for seg in segments:
         seg = seg.strip()
@@ -282,68 +340,89 @@ def ai_parse():
         is_income = False
         person_name = None
         debt_type = None
+        target_category = None
         
-        # 1. Check for specific income patterns (like salary, profit)
-        if any(kw in seg for kw in INCOME_KEYWORDS):
+        desc_raw = seg.replace(str(int(amount)), '').strip()
+        
+        # 1. CORE HINGLISH PATTERNS (Highest Priority)
+        # "ne ... diya/diye" -> Someone gave me money (amount can be in between)
+        if re.search(r'\bne\b.*(?:diya|diye|mila)\b', seg):
+            is_debt = True
+            debt_type = 'borrowed'
+        
+        # "ko ... diya/diye" -> I gave someone money
+        elif re.search(r'\bko\b.*(?:diya|diye)\b', seg) or re.search(r'\blent\b', seg):
+            is_debt = True
+            debt_type = 'lent'
+        
+        # "se liya" -> I took from someone
+        elif re.search(r'\bse\b.*\bliya\b', seg) or re.search(r'\bborrowed\b', seg):
+            is_debt = True
+            debt_type = 'borrowed'
+
+        # "mujhe ... mila/diya" -> I received (no explicit name)
+        elif re.search(r'\bmujhe\b.*(?:mila|diya|diye|mile)\b', seg):
             is_income = True
 
-        # 2. Check for Debt/Person patterns
-        # "X ko diya" vs "X ne diya"
-        # "ne diya" or "ne diye" means Income/Gift (Money coming in)
-        if 'ne diya' in seg or 'ne diye' in seg or 'mujhe' in seg:
-            is_income = True
-        
-        # "ko diya" or "ko diye" or "lent" means Debt (Money going out)
-        elif any(kw in seg for kw in DEBT_KEYWORDS):
-            is_debt = True
-            names_match = re.search(r'(?:to|ko|se|for)\s+([a-zA-Z]+)|([a-zA-Z]+)\s+(?:ko|se|ko diya|se liya)', seg)
-            
-            words = seg.replace(str(int(amount)), '').split()
-            potential_names = [w for w in words if w not in ['ko', 'diya', 'se', 'liya', 'aur', 'ke', 'liye', 'expense', 'add', 'lent', 'borrowed']]
+        # 2. EXTRACT PERSON NAME (for any person-related command)
+        if is_debt or re.search(r'\b(ne|ko|se)\b', seg):
+            words = desc_raw.split()
+            stop_words = ['ko', 'ne', 'se', 'liya', 'diya', 'diye', 'aur', 'ke', 'liye', 'expense', 'add', 'lent', 'borrowed', 'mujhe', 'rs', 'rupee', 'rupees']
+            potential_names = [w for w in words if w not in stop_words and not w.isdigit()]
             if potential_names:
                 person_name = potential_names[0].capitalize()
-            
-            if 'ko' in seg or 'diya' in seg or 'lent' in seg:
-                debt_type = 'lent'
-            else:
-                debt_type = 'borrowed'
 
-        # 3. Decision Tree
+        # 3. APPLY CUSTOM LEARNING (Override/Refinement - only if core rules didn't match)
+        for kw, (t_type, t_cat) in rules_map.items():
+            if kw in desc_raw:
+                if not is_income and not is_debt:
+                    if t_type == 'income': is_income = True
+                    elif t_type in ['lent', 'borrowed']: 
+                        is_debt = True
+                        debt_type = t_type
+                target_category = t_cat
+                break
+        
+        # 4. FINAL FALLBACK TO PRE-TRAINED KEYWORDS
+        if not is_income and not is_debt:
+            if any(kw in seg for kw in INCOME_KEYWORDS):
+                is_income = True
+            
+        # 5. DECISION TREE
         if is_debt and person_name:
             results.append({
                 'is_debt': True,
                 'amount': amount,
                 'name': person_name,
                 'type': debt_type,
-                'description': f"Bro-Bot Split: {seg}"
+                'description': f"{person_name} ({seg})"
             })
         elif is_income:
             results.append({
                 'is_debt': False,
                 'amount': amount,
                 'type': 'income',
-                'category': 'Salary/Income' if 'salary' in seg else 'General',
-                'description': seg or 'Income'
+                'category': target_category or ('Salary/Income' if 'salary' in seg else 'General'),
+                'description': desc_raw or 'Income'
             })
         else:
             # Default to expense
-            description = seg.replace(str(int(amount)), '').strip()
-            category = 'Other'
-            for cat, keywords in CATEGORIES.items():
-                if any(kw in description for kw in keywords):
-                    category = cat.capitalize()
-                    break
+            category = target_category or 'Other'
+            if not target_category:
+                for cat, keywords in CATEGORIES.items():
+                    if any(kw in desc_raw for kw in keywords):
+                        category = cat
+                        break
             
             results.append({
                 'is_debt': False,
                 'amount': amount,
                 'type': 'expense',
                 'category': category,
-                'description': description or 'Expense'
+                'description': desc_raw or 'Expense'
             })
 
     return jsonify(results)
-
 
 # --- Serve Frontend (Fallback for Local Dev) ---
 @app.route('/', defaults={'path': ''})

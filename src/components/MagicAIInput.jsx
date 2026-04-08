@@ -81,13 +81,13 @@ const MagicAIInput = () => {
                 <div className="flex-shrink-0">
                     <Sparkles size={16} className={isLoading ? "animate-pulse text-indigo-500" : "text-slate-400"} />
                 </div>
-                
+
                 <input
                     type="text"
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleParse()}
-                    placeholder="Type to log: '200 lunch aur 50 rahul ko diya'..."
+                    placeholder="Type to log: ......."
                     className="flex-1 bg-transparent border-none outline-none py-3 text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
                 />
 
@@ -107,7 +107,7 @@ const MagicAIInput = () => {
                     >
                         <Send size={16} />
                     </button>
-                    
+
                     <div className="hidden sm:flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-400">
                         <span className="opacity-50">↩</span> ENTER
                     </div>
@@ -132,19 +132,77 @@ const MagicAIInput = () => {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                                 {parsedItems.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm">
-                                        <div className="flex items-center gap-3 overflow-hidden">
-                                            <div className={`flex-shrink-0 p-1.5 rounded-lg ${item.is_debt ? 'bg-amber-50 text-amber-600 dark:bg-amber-900/20' : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20'}`}>
-                                                {item.is_debt ? <ArrowRight size={14} /> : <Check size={14} />}
+                                    <div key={idx} className="flex flex-col p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm space-y-3 group transition-all hover:border-indigo-200">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3 overflow-hidden">
+                                                <div className={`flex-shrink-0 p-2 rounded-xl ${item.type === 'income' ? 'bg-emerald-50 text-emerald-600' : item.is_debt ? 'bg-amber-50 text-amber-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                    {item.is_debt ? <ArrowRight size={14} /> : item.type === 'income' ? <Check size={14} /> : <X size={14} />}
+                                                </div>
+                                                <div className="truncate">
+                                                    <p className="text-sm font-black text-slate-800 dark:text-slate-100 truncate capitalize">
+                                                        {item.is_debt ? `${item.name}` : item.description}
+                                                    </p>
+                                                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Extracted Segment</p>
+                                                </div>
                                             </div>
-                                            <div className="truncate">
-                                                <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate capitalize">
-                                                    {item.is_debt ? `Lent: ${item.name}` : item.description}
-                                                </p>
-                                                <p className="text-[10px] text-slate-400 uppercase font-medium">{item.category || 'Ledger'}</p>
-                                            </div>
+                                            <p className="text-lg font-mono font-black text-slate-900 dark:text-white">₹{item.amount}</p>
                                         </div>
-                                        <p className="text-sm font-bold text-slate-900 dark:text-white pl-2">₹{item.amount}</p>
+
+                                        <div className="flex items-center gap-2 pt-2 border-t border-slate-50 dark:border-slate-800">
+                                            <select
+                                                value={item.type}
+                                                onChange={(e) => {
+                                                    const newItems = [...parsedItems];
+                                                    newItems[idx].type = e.target.value;
+                                                    newItems[idx].is_debt = ['lent', 'borrowed'].includes(e.target.value);
+                                                    setParsedItems(newItems);
+                                                }}
+                                                className="bg-slate-50 dark:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg border-none outline-none text-slate-600 dark:text-slate-400 focus:ring-1 focus:ring-indigo-500"
+                                            >
+                                                <option value="expense">Expense</option>
+                                                <option value="income">Income</option>
+                                                <option value="lent">Lent</option>
+                                                <option value="borrowed">Borrowed</option>
+                                            </select>
+
+                                            <input
+                                                type="text"
+                                                value={item.category || (item.is_debt ? 'Ledger' : 'Other')}
+                                                onChange={(e) => {
+                                                    const newItems = [...parsedItems];
+                                                    newItems[idx].category = e.target.value;
+                                                    setParsedItems(newItems);
+                                                }}
+                                                placeholder="Category"
+                                                className="flex-1 bg-slate-50 dark:bg-slate-800 text-[10px] font-bold px-3 py-1.5 rounded-lg border-none outline-none text-slate-600 dark:text-slate-400 placeholder:text-slate-300"
+                                            />
+
+                                            <button
+                                                onClick={async () => {
+                                                    const cleanKeyword = (item.is_debt ? item.name : item.description).toLowerCase().trim();
+                                                    try {
+                                                        const res = await fetch('/api/train', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({
+                                                                keyword: cleanKeyword,
+                                                                target_type: item.type,
+                                                                target_category: item.category
+                                                            })
+                                                        });
+                                                        if (res.ok) {
+                                                            alert(`Learned: "${cleanKeyword}" is ${item.type}`);
+                                                        }
+                                                    } catch (err) {
+                                                        console.error("Training failed", err);
+                                                    }
+                                                }}
+                                                className="p-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-indigo-600 hover:text-white"
+                                                title="Teach Bot this word"
+                                            >
+                                                <Sparkles size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
