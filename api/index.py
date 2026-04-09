@@ -305,10 +305,9 @@ def ai_parse():
     data = request.json
     text = data.get('text', '').lower()
     
-    # Text Normalization for Numbers (Hinglish/English words to digits)
+    # 1. TEXT NORMALIZATION (Numbers & Units)
     number_replacements = {
-        r'\bone hundred\b': '100', r'\bhundred\b': '100', r'\bek so\b': '100', r'\bek sau\b': '100', r'\bsau\b': '100', 
-        r'\bso\b': '100', # Capturing the hinglish translation of 100 by speech to text
+        r'\bone hundred\b': '100', r'\bhundred\b': '100', r'\bek so\b': '100', r'\bek sau\b': '100', r'\bsau\b': '100', r'\bso\b': '100',
         r'\bdo so\b': '200', r'\bdo sau\b': '200', r'\btwo hundred\b': '200',
         r'\bteen so\b': '300', r'\bteen sau\b': '300', r'\bthree hundred\b': '300',
         r'\bchar so\b': '400', r'\bchar sau\b': '400', r'\bfour hundred\b': '400',
@@ -318,43 +317,80 @@ def ai_parse():
         r'\baath so\b': '800', r'\baath sau\b': '800', r'\beight hundred\b': '800',
         r'\bnau so\b': '900', r'\bnau sau\b': '900', r'\bnine hundred\b': '900',
         r'\bek hazar\b': '1000', r'\bhazar\b': '1000', r'\bone thousand\b': '1000', r'\bthousand\b': '1000',
-        r'\bten\b': '10', r'\bdas\b': '10',
-        r'\btwenty\b': '20', r'\bbees\b': '20',
-        r'\bthirty\b': '30', r'\btees\b': '30',
-        r'\bforty\b': '40', r'\bchalis\b': '40',
-        r'\bfifty\b': '50', r'\bpachas\b': '50',
-        r'\bsixty\b': '60', r'\bsaath\b': '60',
-        r'\bseventy\b': '70', r'\bsattar\b': '70',
-        r'\beighty\b': '80', r'\bassi\b': '80',
-        r'\bninety\b': '90', r'\bnabbe\b': '90',
-        r'\bone\b': '1', r'\bek\b': '1',
-        r'\btwo\b': '2', r'\bdo\b': '2',
-        r'\bthree\b': '3', r'\bteen\b': '3',
-        r'\bfour\b': '4', r'\bchar\b': '4',
-        r'\bfive\b': '5', r'\bpanch\b': '5',
+        r'\bten\b': '10', r'\bdas\b': '10', r'\btwenty\b': '20', r'\bbees\b': '20', r'\bthirty\b': '30', r'\btees\b': '30',
+        r'\bforty\b': '40', r'\bchalis\b': '40', r'\bfifty\b': '50', r'\bpachas\b': '50', r'\bsixty\b': '60', r'\bsaath\b': '60',
+        r'\bseventy\b': '70', r'\bsattar\b': '70', r'\beighty\b': '80', r'\bassi\b': '80', r'\bninety\b': '90', r'\bnabbe\b': '90',
+        r'\bone\b': '1', r'\bek\b': '1', r'\btwo\b': '2', r'\bdo\b': '2', r'\bthree\b': '3', r'\bteen\b': '3', r'\bfour\b': '4', r'\bchar\b': '4', r'\bfive\b': '5', r'\bpanch\b': '5',
     }
-    
     for pattern, digit in number_replacements.items():
         text = re.sub(pattern, digit, text)
     
-    # Load user's custom training data
-    custom_rules = TrainingData.query.filter_by(user_id=current_user.id).all()
-    rules_map = {r.keyword: (r.target_type, r.target_category) for r in custom_rules}
+    # 2. DATASETS (Massive Powerhouse)
+    CATEGORIES = {
+        'Food': ['pizza', 'burger', 'momos', 'biryani', 'chai', 'tea', 'coffee', 'sandwich', 'thali', 'samosa', 'kachori', 'bread', 'milk', 'doodh', 'paneer', 'chicken', 'meat', 'egg', 'soda', 'pepsi', 'coke', 'maggi', 'pasta', 'zomato', 'swiggy', 'kfc', 'mcdonald', 'dominos', 'pizza hut', 'subway', 'starbucks', 'blinkit', 'zepto', 'khana', 'dinner', 'lunch', 'snack', 'restaurant', 'ice cream', 'pani', 'water', 'biscuit', 'cake', 'munch', 'chocolate'],
+        'Transport': ['uber', 'ola', 'rapido', 'indriver', 'blusmart', 'auto', 'rickshaw', 'cab', 'taxi', 'metro', 'train', 'bus', 'ticket', 'flight', 'indigo', 'air india', 'akasa', 'spicejet', 'petrol', 'diesel', 'cng', 'fuel', 'toll', 'parking', 'mechanic', 'service', 'tyres', 'wash', 'cycle', 'bike', 'car'],
+        'Shopping': ['amazon', 'flipkart', 'myntra', 'ajio', 'meesho', 'nykaa', 'lenskart', 'bigbasket', 'groceries', 'sabzi', 'fruits', 'market', 'mall', 'zara', 'pantaloons', 'reliance', 'h&m', 'max', 'westside', 'clothes', 'shoes', 'bags', 'electronics', 'mobile', 'laptop', 'gadget', 'rashan', 'kirana', 'delivery', 'courier'],
+        'Bills': ['jio', 'airtel', 'vi', 'bsnl', 'recharge', 'wifi', 'broadband', 'electricity', 'bijli', 'water', 'gas', 'cylinder', 'piped gas', 'rent', 'maintenance', 'society', 'tax', 'insurance', 'lic', 'emi', 'loan'],
+        'Health': ['medicine', 'dawai', 'doctor', 'fees', 'clinic', 'hospital', 'lab', 'apollo', 'pharmeasy', 'tata 1mg', 'physio', 'checkup', 'test', 'blood'],
+        'Fun': ['cinema', 'pvr', 'inox', 'movie', 'netflix', 'prime', 'spotify', 'hotstar', 'youtube', 'gaming', 'ps5', 'xbox', 'steam', 'gym', 'fitness', 'club', 'party', 'drinks', 'beer', 'pub', 'trip', 'travel', 'gold'],
+        'Personal': ['gift', 'birthday', 'wedding', 'shadi', 'donation', 'mandir', 'charity', 'stationary', 'books', 'xerox', 'print', 'fees']
+    }
     
-    # 1. Split by explicit delimiters
-    initial_segments = re.split(r'\s+(?:and|aur|plus)\s+|\s*,\s*', text)
-    segments = []
+    # 100+ Common Indian Names for disambiguation
+    INDIAN_NAMES = ['rahul', 'rohit', 'shyam', 'ram', 'aman', 'anjali', 'priya', 'pooja', 'neha', 'karan', 'arjun', 'aditya', 'deepa', 'shanti', 'sonu', 'monu', 'chintu', 'bittu', 'pinky', 'ravi', 'vijay', 'sanjay', 'ajay', 'suresh', 'mukesh', 'rajesh', 'dinesh', 'vinod', 'sunil', 'anil', 'pramod', 'manoj', 'ashok', 'laxmi', 'savita', 'kavita', 'rekha', 'suman', 'meena', 'sarita', 'kavya', 'ishan', 'aryan', 'kabir', 'vivaan', 'advait', 'anaya', 'shanaya', 'myra', 'kyra', 'saanvi', 'aavya', 'mummy', 'papa', 'bhai', 'behen', 'didi', 'bhaiya', 'uncle', 'aunty', 'dadi', 'dada', 'nani', 'nana', 'kapil', 'mohit', 'deepak', 'gaurav', 'vikas', 'pankaj', 'abhishek', 'sameer', 'isha', 'tanvi', 'ria', 'diya', 'manish', 'yogesh', 'akash', 'vishal', 'sandeep', 'nitin', 'tushar', 'nikhil', 'varun', 'kunal']
+    
+    STOP_WORDS = [
+        'ko', 'ne', 'se', 'ka', 'ki', 'ke', 'liye', 'aur', 'and', 'me', 'par', 'per', 'to', 'from', 'for', 'with', 'by', 'the', 'is', 'at', 
+        'gave', 'given', 'diya', 'diye', 'mila', 'mile', 'received', 'got', 'sent', 'bheja', 'bheje', 'pay', 'paid', 'transferred', 
+        'dalya', 'dala', 'dal', 'add', 'added', 'put', 'rs', 'rupee', 'rupees', 'rupya', 'rupaye', 'bucks', 'rps', 'in', 'of',
+        'main', 'maine', 'mere', 'hum', 'mujh', 'apne', 'yaaron', 'bro', 'yaar', 'guys', 'guyz', 'please', 'pls', 'tha', 'thi', 'the',
+        'kal', 'aaj', 'parso', 'today', 'yesterday', 'now', 'now', 'abhi', 'sent', 'received', 'liya', 'diya', 'done', 'ok', 'yes', 'no',
+        'paisa', 'paise', 'money', 'cash', 'upi', 'gpay', 'phonepay', 'paytm', 'bank', 'account'
+    ]
+    ALL_CAT_KEYWORDS = [kw for lst in CATEGORIES.values() for kw in lst]
 
-    # 2. Implicit Sub-segmentation (Split by multiple numbers)
-    # e.g., "100 pizza 200 burger" -> ["100 pizza", "200 burger"]
-    for s in initial_segments:
+    # 3. SEGMENTATION & PRE-PROCESSING (Advanced Multi-Entry)
+    # Use Lookahead to split by separators ONLY if followed by a number or a category keyword
+    # This prevents splitting "Rahul aur Aman" but allows splitting "100 burger aur 200 pizza"
+    # Separators: and, aur, plus, or, bhi, phir, main, maine, also
+    split_pattern = r'\s+(?:and|aur|plus|or|bhi|phir|main|maine|also)(?=\s+(?:\d+|' + '|'.join(ALL_CAT_KEYWORDS) + r'))\s*|\s*,\s*(?=\d+)'
+    raw_segments = re.split(split_pattern, text)
+    
+    segments = []
+    for s in raw_segments:
+        s = s.strip()
+        if not s: continue
+        
+        # Unit normalization (1.5k -> 1500)
+        s = re.sub(r'((?:\d+\.?\d*)|(?:\.\d+))\s*k\b', lambda m: str(int(float(m.group(1)) * 1000)), s)
+        s = re.sub(r'((?:\d+\.?\d*)|(?:\.\d+))\s*l\b', lambda m: str(int(float(m.group(1)) * 100000)), s)
+        
+        # Multi-Name Handling (Vocabulary-Agnostic)
+        marker_match = re.search(r'(ko|ne|se)', s)
+        if marker_match:
+            marker = marker_match.group(1)
+            prefix = s[:marker_match.start()].strip()
+            # Split prefix by list separators
+            parts = re.split(r'\s+(?:and|aur|or|plus|comma)\s*|\s*,\s*', prefix)
+            found_names = []
+            for p in parts:
+                p_clean = p.strip().lower()
+                # AGNOSTIC RULE: If not a stop word/category, it's a candidate name
+                if p_clean and p_clean not in STOP_WORDS and p_clean not in ALL_CAT_KEYWORDS and not p_clean.isdigit():
+                    found_names.append(p_clean.capitalize())
+            
+            if len(found_names) > 1:
+                base_text = s[marker_match.start():].strip()
+                for name in found_names:
+                    segments.append(f"{name} {base_text}")
+                continue
+        
+        # Split by multiple numbers (Fallback implicit split)
         nums = list(re.finditer(r'(?<![a-zA-Z])\d+(?![a-zA-Z])', s))
         if len(nums) > 1:
             last_pos = 0
             for i in range(1, len(nums)):
-                # Logic: If we see a number like "2024" after an amount, don't split there
-                if nums[i].group().startswith('20') and len(nums[i].group()) == 4:
-                    continue
+                if nums[i].group().startswith('20') and len(nums[i].group()) == 4: continue
                 split_pos = nums[i].start()
                 segments.append(s[last_pos:split_pos].strip())
                 last_pos = split_pos
@@ -363,115 +399,131 @@ def ai_parse():
             segments.append(s.strip())
 
     results = []
-    
-    # --- MASSIVE PRE-TRAINING VOCABULARY ---
-    CATEGORIES = {
-        'Food': ['pizza', 'khana', 'dinner', 'lunch', 'chai', 'coffee', 'maggi', 'snack', 'restaurant', 'mcd', 'kfc', 'swiggy', 'zomato', 'momos', 'burger'],
-        'Transport': ['auto', 'cab', 'uber', 'ola', 'petrol', 'diesel', 'bus', 'train', 'metro', 'parking', 'toll'],
-        'Shopping': ['amazon', 'flipkart', 'myntra', 'kapde', 'clothes', 'shoes', 'mall', 'zara', 'h&m', 'groceries', 'sabzi'],
-        'Bills': ['recharge', 'wifi', 'rent', 'bijli', 'electricity', 'water', 'gas', 'insurance', 'ott', 'netflix'],
-        'Healthcare': ['medicine', 'doctor', 'hospital', 'clinic', 'pharma', 'dawai'],
-        'Fun': ['movie', 'club', 'party', 'game', 'gaming', 'drinks', 'beer', 'pub'],
-    }
-    INCOME_KEYWORDS = ['salary', 'income', 'profit', 'mile', 'mila', 'aaye', 'aai', 'credited', 'deposit', 'bonus', 'received']
-    
+    custom_rules = TrainingData.query.filter_by(user_id=current_user.id).all()
+    rules_map = {r.keyword: (r.target_type, r.target_category) for r in custom_rules}
+
+    # 4. UNIVERSAL EXTRACTION ENGINE
     for seg in segments:
         seg = seg.strip()
         if not seg: continue
             
-        amt_match = re.search(r'(\d+)', seg)
+        # A. EXTRACT AMOUNT
+        amt_match = re.search(r'(\d+(?:\.\d+)?)', seg)
         if not amt_match: continue
         amount = float(amt_match.group(1))
         
+        # B. INITIALIZE ENTITIES
         is_debt = False
         is_income = False
         person_name = None
         debt_type = None
-        target_category = None
+        found_category = None
+        found_via_marker = False
         
-        # Clean noise words like 'rs', 'rupee', 'rupees'
-        clean_seg = re.sub(r'\b(rs|rupee|rupees)\b', '', seg).strip()
-        desc_raw = clean_seg.replace(str(int(amount)), '').strip()
-        desc_raw = re.sub(r'\s+', ' ', desc_raw).strip()
+        # C. DETECT CATEGORY (Pre-Scan)
+        for cat, keywords in CATEGORIES.items():
+            if any(re.search(fr'\b{kw}\b', seg) for kw in keywords):
+                found_category = cat
+                break
 
-        
-        # 1. CORE HINGLISH PATTERNS (Highest Priority)
-        # "ne ... diya/diye" -> Someone gave me money (amount can be in between)
-        if re.search(r'\bne\b.*(?:diya|diye|mila)\b', seg):
+        # D. DETECT TYPE (Hinglish Decision Tree)
+        if re.search(r'\bne\b.*(?:diya|diye|mila)\b', seg) or re.search(r'\bse\b.*\bliya\b', seg) or re.search(r'\bborrowed\b', seg) or re.search(r'\bse\b.*\bmile\b', seg):
             is_debt = True
             debt_type = 'borrowed'
-        
-        # "ko ... diya/diye" -> I gave someone money
-        elif re.search(r'\bko\b.*(?:diya|diye)\b', seg) or re.search(r'\blent\b', seg):
-            is_debt = True
-            debt_type = 'lent'
-        
-        # "se liya" -> I took from someone
-        elif re.search(r'\bse\b.*\bliya\b', seg) or re.search(r'\bborrowed\b', seg):
-            is_debt = True
-            debt_type = 'borrowed'
-
-        # "mujhe ... mila/diya" -> I received (no explicit name)
-        elif re.search(r'\bmujhe\b.*(?:mila|diya|diye|mile)\b', seg):
+        elif re.search(r'\bko\b.*(?:diya|diye)\b', seg) or re.search(r'\blent\b', seg) or re.search(r'\bdiye\b.*\bko\b', seg):
+            if found_via_marker:
+                is_debt = True
+                debt_type = 'lent'
+            elif found_category and not re.search(r'\b(lent|borrowed)\b', seg):
+                is_debt = False # Treat as expense for someone
+            else:
+                is_debt = True
+                debt_type = 'lent'
+        elif re.search(r'\bmujhe\b.*(?:mila|diya|diye|mile)\b', seg) or any(re.search(fr'\b{kw}\b', seg) for kw in ['salary', 'income', 'profit', 'mila', 'aaye', 'credited']):
             is_income = True
 
-        # 2. EXTRACT PERSON NAME (for any person-related command)
-        if is_debt or re.search(r'\b(ne|ko|se)\b', seg):
-            words = desc_raw.split()
-            stop_words = ['ko', 'ne', 'se', 'liya', 'diya', 'diye', 'aur', 'ke', 'liye', 'expense', 'add', 'lent', 'borrowed', 'mujhe', 'rs', 'rupee', 'rupees']
-            potential_names = [w for w in words if w not in stop_words and not w.isdigit()]
-            if potential_names:
-                person_name = potential_names[0].capitalize()
-
-        # 3. APPLY CUSTOM LEARNING (Override/Refinement - only if core rules didn't match)
-        for kw, (t_type, t_cat) in rules_map.items():
-            if kw in desc_raw:
-                if not is_income and not is_debt:
-                    if t_type == 'income': is_income = True
-                    elif t_type in ['lent', 'borrowed']: 
-                        is_debt = True
-                        debt_type = t_type
-                target_category = t_cat
-                break
+        # D. POSITION-INDEPENDENT NAME EXTRACTION (Agnostic v4)
+        clean_seg = re.sub(r'\b(rs|rupee|rupees|rupya|rupaye)\b', '', seg).strip()
+        words = re.findall(r'\b\s?[\w-]+\b', clean_seg)
         
-        # 4. FINAL FALLBACK TO PRE-TRAINED KEYWORDS
-        if not is_income and not is_debt:
-            if any(kw in seg for kw in INCOME_KEYWORDS):
-                is_income = True
-            
-        # 5. DECISION TREE
+        # Priority 1: Marker-based (Vocabulary-Agnostic)
+        marker_match = re.search(r'([\w-]+)\s+(ko|ne|se)\b', clean_seg)
+        if marker_match:
+            potential = marker_match.group(1).lower()
+            if potential not in STOP_WORDS and potential not in ALL_CAT_KEYWORDS and not potential.isdigit():
+                person_name = potential.capitalize()
+                found_via_marker = True
+
+        # Priority 2: Vocabulary-based (Safety Net for marker-less)
+        if not person_name:
+            for w in words:
+                w_clean = w.strip().lower()
+                if w_clean in INDIAN_NAMES:
+                    person_name = w_clean.capitalize()
+                    break
+        
+        # Priority 3: Fallback (Contextual Fallback)
+        if not person_name and (is_debt or re.search(r'\b(ne|ko|se)\b', seg)):
+            for w in words:
+                w_clean = w.strip().lower()
+                if w_clean not in STOP_WORDS and w_clean not in ALL_CAT_KEYWORDS and not w_clean.isdigit():
+                    person_name = w_clean.capitalize()
+                    break
+
+        # F. CLEAN DESCRIPTION (Segment Deletion)
+        desc_parts = []
+        for w in words:
+            # 1. Skip amount
+            if w == str(int(amount)) or w == f"{amount:.1f}": continue
+            # 2. Skip person_name
+            if person_name and w.lower() == person_name.lower(): continue
+            # 3. Skip pure stop-words
+            if w in STOP_WORDS: continue
+            # 4. Skip marker words
+            if w in ['liye', 'ke', 'ka', 'ki', 'ne', 'se', 'ko', 'diya', 'diye', 'liya', 'mila', 'mile']: continue
+            desc_parts.append(w)
+        
+        final_description = " ".join(desc_parts).strip()
+        if not final_description:
+            final_description = found_category or ("Debt" if is_debt else "Transaction")
+
+        # G. CUSTOM RULE OVERRIDE
+        for kw, (t_type, t_cat) in rules_map.items():
+            if kw in seg:
+                if t_type == 'income': is_income = True
+                elif t_type in ['lent', 'borrowed']: 
+                    is_debt = True
+                    debt_type = t_type
+                if t_cat: found_category = t_cat
+                break
+
+        # H. FINAL ASSEMBLY
         if is_debt and person_name:
             results.append({
                 'is_debt': True,
                 'amount': amount,
                 'name': person_name,
                 'type': debt_type,
-                'description': f"{person_name} ({seg})"
+                'description': final_description if final_description != "Debt" else f"{debt_type} transaction"
             })
         elif is_income:
             results.append({
                 'is_debt': False,
                 'amount': amount,
                 'type': 'income',
-                'category': target_category or ('Salary/Income' if 'salary' in seg else 'General'),
-                'description': desc_raw or 'Income'
+                'category': found_category or 'General',
+                'description': final_description or 'Income'
             })
         else:
-            # Default to expense
-            category = target_category or 'Other'
-            if not target_category:
-                for cat, keywords in CATEGORIES.items():
-                    if any(kw in desc_raw for kw in keywords):
-                        category = cat
-                        break
-            
             results.append({
                 'is_debt': False,
                 'amount': amount,
                 'type': 'expense',
-                'category': category,
-                'description': desc_raw or 'Expense'
+                'category': found_category or 'Other',
+                'description': final_description or 'Expense'
             })
+
+    return jsonify(results)
 
     return jsonify(results)
 
