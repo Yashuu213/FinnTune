@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { TransactionContext } from '../context/TransactionContext';
-import { LayoutDashboard, PieChart, Wallet, LogOut, Sun, Moon, Brain, Sparkles } from 'lucide-react';
+import { LayoutDashboard, PieChart, Wallet, LogOut, Sun, Moon, Brain, Sparkles, UserX } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Layout = ({ children }) => {
     const location = useLocation();
-    const { logout, user, theme, toggleTheme } = useContext(TransactionContext);
+    const { logout, deleteAccount, user, theme, toggleTheme } = useContext(TransactionContext);
 
     const isActive = (path) => location.pathname === path;
 
@@ -72,6 +72,18 @@ const Layout = ({ children }) => {
                                 title="Exit Session"
                             >
                                 <LogOut className="w-4 h-4" />
+                            </button>
+                            
+                            <button
+                                onClick={() => {
+                                    if(window.confirm('Are you strictly sure you want to permanently delete your account and ALL associated financial data? This cannot be undone!')) {
+                                        deleteAccount();
+                                    }
+                                }}
+                                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-red-600 transition-all"
+                                title="Wipe Data & Delete Account"
+                            >
+                                <UserX className="w-4 h-4" />
                             </button>
                         </div>
                     </div>

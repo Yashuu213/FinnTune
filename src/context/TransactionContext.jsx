@@ -90,6 +90,19 @@ export const TransactionProvider = ({ children }) => {
         setUser(null);
     };
 
+    const deleteAccount = async () => {
+        try {
+            const res = await fetch('/api/delete-account', { method: 'DELETE' });
+            if (res.ok) {
+                setUser(null);
+                return { success: true };
+            }
+            return { success: false };
+        } catch (err) {
+            return { success: false };
+        }
+    };
+
     const sendOtp = async (email, type) => {
         try {
             const res = await fetch('/api/send-otp', {
@@ -270,6 +283,7 @@ export const TransactionProvider = ({ children }) => {
             login,
             register,
             logout,
+            deleteAccount,
             sendOtp,
             resetPassword,
             transactions,

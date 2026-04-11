@@ -243,6 +243,27 @@ def reset_password():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/delete-account', methods=['DELETE'])
+@login_required
+def delete_account():
+    try:
+        user_id = current_user.id
+        
+        # Explicit cascade deletions
+        Transaction.query.filter_by(user_id=user_id).delete()
+        Debt.query.filter_by(user_id=user_id).delete()
+        TrainingData.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user record
+        db.session.delete(current_user)
+        db.session.commit()
+        
+        logout_user() # Clear session
+        return jsonify({'message': 'Account and all associated data permanently deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/logout', methods=['POST'])
 @login_required
 def logout():
