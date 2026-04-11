@@ -13,6 +13,7 @@ const MagicAIInput = () => {
     const recognitionRef = useRef(null);
     const silenceTimerRef = useRef(null);
     const isListeningRef = useRef(isListening);
+    const typingTimerRef = useRef(null);
 
     useEffect(() => {
         isListeningRef.current = isListening;
@@ -113,11 +114,48 @@ const MagicAIInput = () => {
                 <input
                     type="text"
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleParse()}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setText(val);
+                        if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                        
+                        if (val.trim()) {
+                            typingTimerRef.current = setTimeout(() => {
+                                handleParse(val);
+                            }, 800);
+                        } else {
+                            setShowPreview(false);
+                            setParsedItems([]);
+                        }
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            if (showPreview && parsedItems.length > 0) {
+                                handleConfirm();
+                            } else if (!isLoading) {
+                                handleParse();
+                            }
+                        }
+                    }}
                     placeholder={isListening ? "Listening... Say something!" : "Type to log: ......."}
                     className="flex-1 bg-transparent border-none outline-none py-3 text-sm font-medium text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
                 />
+
+                {text && (
+                    <button
+                        onClick={() => {
+                            setText('');
+                            setParsedItems([]);
+                            setShowPreview(false);
+                            if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+                        }}
+                        className="p-1.5 mr-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-all opacity-70 hover:opacity-100"
+                        title="Clear Input"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
 
                 <div className="flex items-center gap-1.5 border-l border-slate-100 dark:border-slate-800 pl-3">
                     <button
