@@ -121,7 +121,7 @@ def send_email_async(receiver_email, otp, action_type="verification"):
         <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 16px; text-align: center; border-radius: 8px; margin: 24px 0;">
             <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #0f172a;">{otp}</span>
         </div>
-        <p style="color: #64748b; font-size: 14px; text-align: center;">This code will expire in exactly 10 minutes. Do not share this code with anyone.</p>
+        <p style="color: #64748b; font-size: 14px; text-align: center;">This code will expire in exactly 5 minutes. Do not share this code with anyone.</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
         <p style="color: #94a3b8; font-size: 12px; text-align: center;">If you did not request this email, please ignore it.<br>&copy; {datetime.utcnow().year} Hisaab.AI Operations</p>
     </div>
@@ -194,7 +194,7 @@ def register():
         if not otp_record:
             return jsonify({'error': 'Invalid OTP'}), 400
             
-        if (datetime.utcnow() - otp_record.created_at) > timedelta(minutes=10):
+        if (datetime.utcnow() - otp_record.created_at) > timedelta(minutes=5):
             return jsonify({'error': 'OTP expired'}), 400
         
         if User.query.filter_by(email=email).first():
@@ -241,7 +241,7 @@ def reset_password():
             return jsonify({'error': 'Missing data fields'}), 400
             
         otp_record = OTPRecord.query.filter_by(email=email, otp=otp).first()
-        if not otp_record or (datetime.utcnow() - otp_record.created_at) > timedelta(minutes=10):
+        if not otp_record or (datetime.utcnow() - otp_record.created_at) > timedelta(minutes=5):
             return jsonify({'error': 'Invalid or expired OTP'}), 400
             
         user = User.query.filter_by(email=email).first()
